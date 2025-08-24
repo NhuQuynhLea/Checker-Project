@@ -47,8 +47,8 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="A comprehensive plagiarism detection system with document management and analytics",
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    docs_url="/docs",  # Always enable Swagger docs
+    redoc_url="/redoc",  # Always enable ReDoc
     lifespan=lifespan
 )
 
