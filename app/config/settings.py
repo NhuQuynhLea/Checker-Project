@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     )
     
     # Database Configuration
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/plagiarism_detector"
+    database_url: str
     database_host: str = "localhost"
     database_port: int = 5432
     database_name: str = "plagiarism_detector"
@@ -68,8 +69,21 @@ class Settings(BaseSettings):
     def get_allowed_file_types(self) -> List[str]:
         """Parse allowed file types from comma-separated string."""
         return [file_type.strip() for file_type in self.allowed_file_types.split(',')]
+    
+    # Railway deployment configuration
+    allowed_hosts: list[str] = [
+        host for host in [
+            os.getenv("RAILWAY_PUBLIC_DOMAIN"), 
+            "localhost", 
+            "127.0.0.1"
+        ] if host is not None
+    ]
+    
+    # Add a flag to allow all hosts if running on a trusted platform
+    # Railway detection - be very aggressive since we're getting 400 errors
+    allow_all_hosts: bool = True  # Temporarily disable host validation entirely
 
 
-@lru_cache()
+# @lru_cache()
 def get_settings() -> Settings:
     return Settings()

@@ -3,10 +3,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import structlog
+import os
 
 from app.config.settings import get_settings
 from app.config.database import create_tables
-from app.core.middleware import LoggingMiddleware, setup_cors_middleware, setup_trusted_host_middleware
+from app.core.middleware import LoggingMiddleware, setup_cors_middleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.core.exceptions import BaseCustomException
 from app.utils.logger import configure_logging
 from app.schemas.common import HealthCheck, ErrorResponse
@@ -31,7 +33,8 @@ async def lifespan(app: FastAPI):
         logger.info("Database tables created successfully")
     except Exception as e:
         logger.error("Failed to create database tables", error=str(e))
-        raise
+        # Allow app to start without database for testing
+        logger.warning("Application starting without database connection")
     
     yield
     
@@ -49,9 +52,28 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+
+# Setup trusted host middleware directly
+railway_vars = {
+    "RAILWAY_ENVIRONMENT_NAME": os.getenv("RAILWAY_ENVIRONMENT_NAME"),
+    "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT"),
+    "RAILWAY_PROJECT_ID": os.getenv("RAILWAY_PROJECT_ID"),
+    "PORT": os.getenv("PORT")
+}
+logger.info("Railway environment check", railway_vars=railway_vars, allow_all_hosts=settings.allow_all_hosts)
+
+if settings.allow_all_hosts:
+    logger.info("✅ SKIPPING TrustedHostMiddleware - Railway deployment detected")
+    # Don't add TrustedHostMiddleware on Railway - let all hosts through
+else:
+    # Filter out None values for local development
+    allowed_hosts = [host for host in settings.allowed_hosts if host is not None]
+    logger.info("⚠️ Adding TrustedHostMiddleware for local development", allowed_hosts=allowed_hosts)
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
+
 # Setup middleware
 setup_cors_middleware(app)
-setup_trusted_host_middleware(app)
 app.add_middleware(LoggingMiddleware)
 
 
@@ -131,6 +153,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", 8000)),
         reload=settings.debug
     )

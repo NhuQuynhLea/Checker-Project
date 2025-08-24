@@ -3,7 +3,6 @@ import uuid
 from typing import Callable
 from fastapi import Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import structlog
 
@@ -73,10 +72,3 @@ def setup_cors_middleware(app):
     )
 
 
-def setup_trusted_host_middleware(app):
-    """Setup trusted host middleware."""
-    if not settings.debug:
-        app.add_middleware(
-            TrustedHostMiddleware,
-            allowed_hosts=["localhost", "127.0.0.1"]
-        )
