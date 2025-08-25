@@ -15,14 +15,41 @@ class StorageService:
     """Service for handling file storage operations with MinIO."""
     
     def __init__(self):
-        self.client = Minio(
-            settings.minio_endpoint,
-            access_key=settings.minio_access_key,
-            secret_key=settings.minio_secret_key,
-            secure=settings.minio_secure
-        )
+        self.client = None
         self.bucket_name = settings.minio_bucket_name
-        self._ensure_bucket_exists()
+        self.is_connected = False
+        self._initialize_client()
+    
+    def _initialize_client(self):
+        """Initialize MinIO client with connection validation."""
+        try:
+            self.client = Minio(
+                settings.minio_endpoint,
+                access_key=settings.minio_access_key,
+                secret_key=settings.minio_secret_key,
+                secure=settings.minio_secure
+            )
+            
+            # Test connection by listing buckets
+            list(self.client.list_buckets())
+            self.is_connected = True
+            self._ensure_bucket_exists()
+            
+            logger.info(
+                "MinIO connection established",
+                endpoint=settings.minio_endpoint,
+                bucket=self.bucket_name,
+                secure=settings.minio_secure
+            )
+            
+        except Exception as e:
+            logger.error(
+                "Failed to connect to MinIO",
+                endpoint=settings.minio_endpoint,
+                error=str(e)
+            )
+            self.is_connected = False
+            self.client = None
     
     def _ensure_bucket_exists(self):
         """Ensure the bucket exists, create if it doesn't."""
@@ -42,6 +69,9 @@ class StorageService:
         file_size: int
     ) -> str:
         """Upload a file and return the object ID."""
+        if not self.is_connected or not self.client:
+            raise StorageException("MinIO storage is not available. Please check your MinIO configuration.")
+            
         try:
             object_id = generate_unique_filename(original_filename)
             
@@ -68,6 +98,9 @@ class StorageService:
     
     def download_file(self, object_id: str) -> bytes:
         """Download a file by object ID."""
+        if not self.is_connected or not self.client:
+            raise StorageException("MinIO storage is not available. Please check your MinIO configuration.")
+            
         try:
             response = self.client.get_object(self.bucket_name, object_id)
             data = response.read()
@@ -83,6 +116,9 @@ class StorageService:
     
     def delete_file(self, object_id: str) -> bool:
         """Delete a file by object ID."""
+        if not self.is_connected or not self.client:
+            raise StorageException("MinIO storage is not available. Please check your MinIO configuration.")
+            
         try:
             self.client.remove_object(self.bucket_name, object_id)
             logger.info("File deleted successfully", object_id=object_id)
