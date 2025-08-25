@@ -142,7 +142,7 @@ class StorageService:
             #     secure=settings.minio_secure
             # )
             client = Minio(
-                endpoint="https://bucket-production-deb2d.up.railway.app",
+                "bucket-production-deb2d.up.railway.app",
                 access_key="bkb7kf2lVvqb5BWBn9yF",
                 secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
                 secure=True
