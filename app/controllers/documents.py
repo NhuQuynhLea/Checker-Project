@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from app.config.database import get_db
 from app.core.dependencies import get_current_user_dependency, get_pagination_params, PaginationParams
-from app.core.exceptions import NotFoundException, StorageException
+from app.core.exceptions import NotFoundException, StorageException, ValidationException
 from app.services.document_service import DocumentService
 from app.models.user import User
 from app.schemas.document import UserDocumentResponse, UserDocumentCreate
@@ -51,8 +51,15 @@ async def upload_document(
             message="Document uploaded successfully",
             data=UserDocumentResponse.from_orm(document)
         )
-    except Exception as e:
+    except ValidationException as e:
+        logger.warning("File validation failed", error=str(e), filename=file.filename)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except StorageException as e:
+        logger.error("Storage service error", error=str(e), filename=file.filename)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Storage service unavailable: {str(e)}")
+    except Exception as e:
+        logger.error("Unexpected error in upload_document", error=str(e), filename=file.filename, user_id=current_user.id)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
 @router.get("", response_model=PaginatedResponse)

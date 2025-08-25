@@ -30,21 +30,30 @@ class StorageService:
                 secure=settings.minio_secure
             )
             
-            # Test connection by listing buckets
-            list(self.client.list_buckets())
-            self.is_connected = True
-            self._ensure_bucket_exists()
-            
-            logger.info(
-                "MinIO connection established",
-                endpoint=settings.minio_endpoint,
-                bucket=self.bucket_name,
-                secure=settings.minio_secure
-            )
+            # Test connection by listing buckets with timeout
+            try:
+                list(self.client.list_buckets())
+                self.is_connected = True
+                self._ensure_bucket_exists()
+                
+                logger.info(
+                    "MinIO connection established",
+                    endpoint=settings.minio_endpoint,
+                    bucket=self.bucket_name,
+                    secure=settings.minio_secure
+                )
+            except Exception as conn_error:
+                logger.warning(
+                    "MinIO connection test failed, storage will be unavailable",
+                    endpoint=settings.minio_endpoint,
+                    error=str(conn_error)
+                )
+                self.is_connected = False
+                # Keep client for potential retry, but mark as disconnected
             
         except Exception as e:
             logger.error(
-                "Failed to connect to MinIO",
+                "Failed to initialize MinIO client",
                 endpoint=settings.minio_endpoint,
                 error=str(e)
             )
