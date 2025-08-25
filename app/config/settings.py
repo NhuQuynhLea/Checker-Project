@@ -41,7 +41,8 @@ class Settings(BaseSettings):
         """Get MinIO endpoint based on environment."""
         if self.is_local_environment:
             return "localhost:9090"
-        return os.getenv("MINIO_ENDPOINT", "localhost:9090")
+        # For Railway, return None if no MinIO endpoint is configured
+        return os.getenv("MINIO_ENDPOINT")
     
     @property
     def minio_access_key(self) -> str:
@@ -60,7 +61,7 @@ class Settings(BaseSettings):
     @property
     def minio_bucket_name(self) -> str:
         """Get MinIO bucket name."""
-        return os.getenv("MINIO_BUCKET_NAME", "plagiarism")
+        return os.getenv("MINIO_BUCKET_NAME", "plagiarism-documents")
     
     @property
     def minio_secure(self) -> bool:

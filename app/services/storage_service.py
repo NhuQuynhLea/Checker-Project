@@ -53,6 +53,11 @@ class StorageService:
             logger.info("Local environment detected - will attempt MinIO connection")
             return False
             
+        # Skip if no MinIO endpoint configured on Railway
+        if not settings.minio_endpoint:
+            logger.info("Skipping MinIO initialization - no MinIO endpoint configured for Railway")
+            return True
+            
         # Skip if localhost endpoint and Railway environment detected
         if settings.minio_endpoint in ["localhost:9000", "localhost:9090"]:
             logger.info("Skipping MinIO initialization - localhost endpoint detected on Railway")
