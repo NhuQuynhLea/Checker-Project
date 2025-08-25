@@ -26,9 +26,11 @@ class Settings(BaseSettings):
     
     # MinIO Configuration
     # Railway MinIO configuration (will override local if Railway env vars are present)
-    minio_endpoint: str = os.getenv("MINIO_ENDPOINT", "localhost:9090")
-    minio_access_key: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-    minio_secret_key: str = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+    minio_endpoint: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+    # minio_access_key: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    # minio_secret_key: str = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+    minio_access_key: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
+    minio_secret_key: str = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin123")
     minio_bucket_name: str = os.getenv("MINIO_BUCKET_NAME", "plagiarism-documents")
     minio_secure: bool = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))  # Use HTTPS on Railway
     
