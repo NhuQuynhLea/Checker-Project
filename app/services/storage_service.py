@@ -135,18 +135,18 @@ class StorageService:
         # Only create client if endpoint is reachable
         client = None
         try:
-            # self.client = Minio(
-            #     settings.minio_endpoint,
-            #     access_key=settings.minio_access_key,
-            #     secret_key=settings.minio_secret_key,
-            #     secure=settings.minio_secure
-            # )
             client = Minio(
-                "bucket-production-deb2d.up.railway.app",
-                access_key="bkb7kf2lVvqb5BWBn9yF",
-                secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
-                secure=True
+                settings.minio_endpoint,
+                access_key=settings.minio_access_key,
+                secret_key=settings.minio_secret_key,
+                secure=settings.minio_secure
             )
+            # client = Minio(
+            #     "bucket-production-deb2d.up.railway.app",
+            #     access_key="bkb7kf2lVvqb5BWBn9yF",
+            #     secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
+            #     secure=True
+            # )
             
             # Test connection by listing buckets
             list(client.list_buckets())
