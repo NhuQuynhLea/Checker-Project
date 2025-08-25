@@ -75,20 +75,20 @@ class StorageService:
     def _initialize_client(self):
         """Initialize MinIO client with connection validation."""
         # Log current MinIO configuration for debugging
-        logger.info(
-            "MinIO configuration",
-            endpoint=settings.minio_endpoint,
-            access_key=settings.minio_access_key,
-            bucket=settings.minio_bucket_name,
-            secure=settings.minio_secure,
-            is_local=getattr(settings, 'is_local_environment', 'unknown')
-        )
+        # logger.info(
+        #     "MinIO configuration",
+        #     endpoint=settings.minio_endpoint,
+        #     access_key=settings.minio_access_key,
+        #     bucket=settings.minio_bucket_name,
+        #     secure=settings.minio_secure,
+        #     is_local=getattr(settings, 'is_local_environment', 'unknown')
+        # )
         
-        # Skip MinIO initialization if we detect it will fail
-        if self._should_skip_minio():
-            self.is_connected = False
-            self.client = None
-            return
+        # # Skip MinIO initialization if we detect it will fail
+        # if self._should_skip_minio():
+        #     self.is_connected = False
+        #     self.client = None
+        #     return
             
         # # Don't create client if we can't reach the endpoint
         # import socket
@@ -128,7 +128,7 @@ class StorageService:
             #     secure=settings.minio_secure
             # )
             self.client = Minio(
-                "https://bucket-production-deb2d.up.railway.app",
+                endpoint="https://bucket-production-deb2d.up.railway.app",
                 access_key="bkb7kf2lVvqb5BWBn9yF",
                 secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
                 secure=True
