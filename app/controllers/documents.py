@@ -56,9 +56,13 @@ async def upload_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except StorageException as e:
         logger.error("Storage service error", error=str(e), filename=file.filename)
+        # Ensure database session is properly handled
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Storage service unavailable: {str(e)}")
     except Exception as e:
         logger.error("Unexpected error in upload_document", error=str(e), filename=file.filename, user_id=current_user.id)
+        # Ensure database session is properly handled
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
