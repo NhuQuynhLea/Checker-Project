@@ -39,14 +39,14 @@ async def upload_document(
         # Create document service
         document_service = DocumentService(db)
         
-        # document = document_service.upload_user_document(
-        #     user_id=current_user.id,
-        #     file_data=file_stream,
-        #     filename=file.filename,
-        #     content_type=file.content_type,
-        #     file_size=len(file_content),
-        #     title=title
-        # )
+        document = document_service.upload_user_document(
+            user_id=current_user.id,
+            file_data=file_stream,
+            filename=file.filename,
+            content_type=file.content_type,
+            file_size=len(file_content),
+            title=title
+        )
         
         return BaseResponse(
             message="Document uploaded successfully",
