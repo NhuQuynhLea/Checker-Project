@@ -27,14 +27,26 @@ class StorageService:
                     cls._instance._initialized = False
         return cls._instance
     
+    # def __init__(self):
+    #     if not self._initialized:
+    #         self.client = None
+    #         self.bucket_name = settings.minio_bucket_name
+    #         self.is_connected = False
+    #         self._initialize_client()
+    #         self._initialized = True
     def __init__(self):
         if not self._initialized:
             self.client = None
             self.bucket_name = settings.minio_bucket_name
             self.is_connected = False
-            self._initialize_client()
+            try:
+                self._initialize_client()
+            except Exception as e:
+                logger.error(f"Storage service initialization failed: {e}")
+                self.client = None
+                self.is_connected = False
             self._initialized = True
-    
+
     def _should_skip_minio(self) -> bool:
         """Determine if MinIO initialization should be skipped."""
         # Check if we're in local environment first
