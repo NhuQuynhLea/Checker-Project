@@ -34,6 +34,7 @@ class StorageService:
     #         self.is_connected = False
     #         self._initialize_client()
     #         self._initialized = True
+    
     def __init__(self):
         if not self._initialized:
             self.client = None
@@ -132,6 +133,7 @@ class StorageService:
         #     return
             
         # Only create client if endpoint is reachable
+        client = None
         try:
             # self.client = Minio(
             #     settings.minio_endpoint,
@@ -139,7 +141,7 @@ class StorageService:
             #     secret_key=settings.minio_secret_key,
             #     secure=settings.minio_secure
             # )
-            self.client = Minio(
+            client = Minio(
                 endpoint="https://bucket-production-deb2d.up.railway.app",
                 access_key="bkb7kf2lVvqb5BWBn9yF",
                 secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
@@ -147,7 +149,10 @@ class StorageService:
             )
             
             # Test connection by listing buckets
-            list(self.client.list_buckets())
+            list(client.list_buckets())
+
+            # Only assign to self.client if connection succeeds
+            self.client = client
             self.is_connected = True
             self._ensure_bucket_exists()
             
@@ -166,6 +171,7 @@ class StorageService:
             )
             self.is_connected = False
             self.client = None
+            client = None
     
     def _ensure_bucket_exists(self):
         """Ensure the bucket exists, create if it doesn't."""
