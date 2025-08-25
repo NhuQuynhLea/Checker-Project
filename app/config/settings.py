@@ -25,11 +25,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     
     # MinIO Configuration
-    minio_endpoint: str = "localhost:9000"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin123"
-    minio_bucket_name: str = "plagiarism-documents"
-    minio_secure: bool = False
+    # Railway MinIO configuration (will override local if Railway env vars are present)
+    minio_endpoint: str = os.getenv("MINIO_PUBLIC_ENDPOINT", "localhost:9000")
+    minio_access_key: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    minio_secret_key: str = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+    minio_bucket_name: str = os.getenv("MINIO_BUCKET_NAME", "plagiarism")
+    minio_secure: bool = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))
     
     # Application Configuration
     app_name: str = "Plagiarism Detection System"
