@@ -64,10 +64,10 @@ class DocumentService:
             # Ensure database session is clean on any failure
             try:
                 self.db.rollback()
-            except Exception:
-                pass  # Ignore rollback errors
+            except Exception as rollback_error:
+                logger.warning("Failed to rollback database session", error=str(rollback_error))
             
-            logger.error("Failed to upload user document", error=str(e))
+            logger.error("Failed to upload user document", error=str(e), exc_info=True)
             raise
     
     def get_user_document(self, document_id: int, user_id: Optional[int] = None) -> Optional[UserDocument]:

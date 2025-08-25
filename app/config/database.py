@@ -34,10 +34,16 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     except Exception as e:
         logger.error(f"Database session error: {e}")
-        db.rollback()
+        try:
+            db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
         raise
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass  # Ignore close errors
 
 
 def create_tables():
