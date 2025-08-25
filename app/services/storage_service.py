@@ -43,6 +43,8 @@ class StorageService:
             "Environment detection",
             is_local=is_local,
             endpoint=settings.minio_endpoint,
+            has_access_key=bool(settings.minio_access_key),
+            has_secret_key=bool(settings.minio_secret_key),
             railway_env=os.getenv("RAILWAY_ENVIRONMENT_NAME"),
             railway_project=os.getenv("RAILWAY_PROJECT_ID"),
             port_env=os.getenv("PORT")
@@ -51,6 +53,11 @@ class StorageService:
         # Don't skip if we're in local environment
         if is_local:
             logger.info("Local environment detected - will attempt MinIO connection")
+            return False
+            
+        # Don't skip if we have proper MinIO configuration on Railway
+        if settings.minio_endpoint and settings.minio_access_key and settings.minio_secret_key:
+            logger.info("Railway environment with MinIO configuration - will attempt connection")
             return False
             
         # Skip if no MinIO endpoint configured on Railway
@@ -166,6 +173,8 @@ class StorageService:
         file_size: int
     ) -> str:
         """Upload a file and return the object ID."""
+        # Remove the mock storage logic since we have proper MinIO config now
+            
         # Try to reconnect if not connected
         if not self.is_connected:
             self._retry_connection()

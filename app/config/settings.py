@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     @property
     def minio_bucket_name(self) -> str:
         """Get MinIO bucket name."""
-        return os.getenv("MINIO_BUCKET_NAME", "plagiarism-documents")
+        return os.getenv("MINIO_BUCKET_NAME", "plagiarism")
     
     @property
     def minio_secure(self) -> bool:
