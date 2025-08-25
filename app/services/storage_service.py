@@ -38,7 +38,7 @@ class StorageService:
     def _should_skip_minio(self) -> bool:
         """Determine if MinIO initialization should be skipped."""
         # Skip if localhost endpoint and Railway environment detected
-        if settings.minio_endpoint == "localhost:9000":
+        if settings.minio_endpoint in ["localhost:9000", "localhost:9090"]:
             # Check for Railway environment indicators
             railway_detected = (
                 hasattr(settings, 'allow_all_hosts') and settings.allow_all_hosts

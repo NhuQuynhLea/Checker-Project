@@ -26,17 +26,18 @@ class Settings(BaseSettings):
     
     # MinIO Configuration
     # Railway MinIO configuration (will override local if Railway env vars are present)
-    minio_endpoint: str = os.getenv("MINIO_PUBLIC_ENDPOINT", "localhost:9000")
+    minio_endpoint: str = os.getenv("MINIO_ENDPOINT", "localhost:9090")
     minio_access_key: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
     minio_secret_key: str = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
-    minio_bucket_name: str = os.getenv("MINIO_BUCKET_NAME", "plagiarism")
-    minio_secure: bool = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))
+    minio_bucket_name: str = os.getenv("MINIO_BUCKET_NAME", "plagiarism-documents")
+    minio_secure: bool = bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))  # Use HTTPS on Railway
     
     # Application Configuration
     app_name: str = "Plagiarism Detection System"
     app_version: str = "1.0.0"
     debug: bool = False
     environment: str = "production"
+    enable_docs: bool = True  # Enable Swagger docs by default
     
     # CORS Configuration - using simple strings that will be split in middleware
     allowed_origins: str = "http://localhost:3000"
