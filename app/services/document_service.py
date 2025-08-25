@@ -39,24 +39,24 @@ class DocumentService:
             )
             
             # Create database record only after successful storage upload
-            # document = UserDocument(
-            #     user_id=user_id,
-            #     title=title or filename,
-            #     object_id=object_id,
-            #     content_type=content_type,
-            #     status="pending"
-            # )
+            document = UserDocument(
+                user_id=user_id,
+                title=title or filename,
+                object_id=object_id,
+                content_type=content_type,
+                status="pending"
+            )
             
-            # self.db.add(document)
-            # self.db.commit()
-            # self.db.refresh(document)
+            self.db.add(document)
+            self.db.commit()
+            self.db.refresh(document)
             
-            # logger.info(
-            #     "User document uploaded",
-            #     document_id=document.id,
-            #     user_id=user_id,
-            #     filename=filename
-            # )
+            logger.info(
+                "User document uploaded",
+                document_id=document.id,
+                user_id=user_id,
+                filename=filename
+            )
             
             return object_id
             

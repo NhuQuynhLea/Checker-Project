@@ -50,7 +50,7 @@ async def upload_document(
         
         return BaseResponse(
             message="Document uploaded successfully",
-            # data=UserDocumentResponse.from_orm(document)
+            data=UserDocumentResponse.from_orm(document)
         )
     except FileUploadException as e:
         logger.warning("File upload validation failed", error=str(e), filename=file.filename)
