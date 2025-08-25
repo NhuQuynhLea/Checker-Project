@@ -2,6 +2,7 @@ from typing import Optional, BinaryIO
 from minio import Minio
 from minio.error import S3Error
 import structlog
+import threading
 
 from app.config.settings import get_settings
 from app.core.exceptions import StorageException
@@ -14,14 +15,34 @@ logger = structlog.get_logger(__name__)
 class StorageService:
     """Service for handling file storage operations with MinIO."""
     
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(StorageService, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
-        self.client = None
-        self.bucket_name = settings.minio_bucket_name
-        self.is_connected = False
-        self._initialize_client()
+        if not self._initialized:
+            self.client = None
+            self.bucket_name = settings.minio_bucket_name
+            self.is_connected = False
+            self._initialize_client()
+            self._initialized = True
     
     def _initialize_client(self):
         """Initialize MinIO client with connection validation."""
+        # Skip MinIO initialization if endpoint is localhost and we're likely on Railway
+        if settings.minio_endpoint == "localhost:9000" and hasattr(settings, 'allow_all_hosts') and settings.allow_all_hosts:
+            logger.info("Skipping MinIO initialization - localhost endpoint detected on Railway")
+            self.is_connected = False
+            self.client = None
+            return
+            
         try:
             self.client = Minio(
                 settings.minio_endpoint,
@@ -49,7 +70,8 @@ class StorageService:
                     error=str(conn_error)
                 )
                 self.is_connected = False
-                # Keep client for potential retry, but mark as disconnected
+                # Don't keep a failed client to prevent cleanup errors
+                self.client = None
             
         except Exception as e:
             logger.error(
@@ -70,6 +92,12 @@ class StorageService:
             logger.error("Failed to create bucket", bucket=self.bucket_name, error=str(e))
             raise StorageException(f"Failed to create storage bucket: {e}")
     
+    def _retry_connection(self):
+        """Attempt to reconnect to MinIO."""
+        if not self.is_connected and self.client is None:
+            logger.info("Attempting to reconnect to MinIO")
+            self._initialize_client()
+    
     def upload_file(
         self, 
         file_data: BinaryIO, 
@@ -78,6 +106,10 @@ class StorageService:
         file_size: int
     ) -> str:
         """Upload a file and return the object ID."""
+        # Try to reconnect if not connected
+        if not self.is_connected:
+            self._retry_connection()
+            
         if not self.is_connected or not self.client:
             raise StorageException("MinIO storage is not available. Please check your MinIO configuration.")
             
