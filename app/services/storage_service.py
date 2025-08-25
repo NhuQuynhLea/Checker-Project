@@ -37,25 +37,41 @@ class StorageService:
     
     def _should_skip_minio(self) -> bool:
         """Determine if MinIO initialization should be skipped."""
+        # Check if we're in local environment first
+        is_local = getattr(settings, 'is_local_environment', False)
+        logger.info(
+            "Environment detection",
+            is_local=is_local,
+            endpoint=settings.minio_endpoint,
+            railway_env=os.getenv("RAILWAY_ENVIRONMENT_NAME"),
+            railway_project=os.getenv("RAILWAY_PROJECT_ID"),
+            port_env=os.getenv("PORT")
+        )
+        
+        # Don't skip if we're in local environment
+        if is_local:
+            logger.info("Local environment detected - will attempt MinIO connection")
+            return False
+            
         # Skip if localhost endpoint and Railway environment detected
         if settings.minio_endpoint in ["localhost:9000", "localhost:9090"]:
-            # Check for Railway environment indicators
-            railway_detected = (
-                hasattr(settings, 'allow_all_hosts') and settings.allow_all_hosts
-            ) or any([
-                os.getenv("RAILWAY_ENVIRONMENT_NAME"),
-                os.getenv("RAILWAY_PROJECT_ID"),
-                os.getenv("PORT")  # Railway sets PORT env var
-            ])
-            
-            if railway_detected:
-                logger.info("Skipping MinIO initialization - localhost endpoint detected on Railway")
-                return True
+            logger.info("Skipping MinIO initialization - localhost endpoint detected on Railway")
+            return True
                 
         return False
     
     def _initialize_client(self):
         """Initialize MinIO client with connection validation."""
+        # Log current MinIO configuration for debugging
+        logger.info(
+            "MinIO configuration",
+            endpoint=settings.minio_endpoint,
+            access_key=settings.minio_access_key,
+            bucket=settings.minio_bucket_name,
+            secure=settings.minio_secure,
+            is_local=getattr(settings, 'is_local_environment', 'unknown')
+        )
+        
         # Skip MinIO initialization if we detect it will fail
         if self._should_skip_minio():
             self.is_connected = False

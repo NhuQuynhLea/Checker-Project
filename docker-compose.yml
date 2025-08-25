@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -19,7 +19,8 @@ services:
     networks:
       - plagiarism_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U plagiarism_user -d plagiarism_detector"]
+      test:
+        ["CMD-SHELL", "pg_isready -U plagiarism_user -d plagiarism_detector"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,7 +35,7 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"
+      - "9090:9000"
       - "9001:9001"
     networks:
       - plagiarism_network
