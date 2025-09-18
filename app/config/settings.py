@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
 import os
+from urllib.parse import urlparse
 
 
 class Settings(BaseSettings):
@@ -15,9 +16,24 @@ class Settings(BaseSettings):
     database_url: str 
     database_host: str = "localhost"
     database_port: int = 5433
-    database_name: str 
-    database_user: str 
-    database_password: str 
+    
+    @property
+    def database_name(self) -> str:
+        """Parse database name from database_url."""
+        parsed = urlparse(self.database_url)
+        return parsed.path.lstrip('/')
+    
+    @property
+    def database_user(self) -> str:
+        """Parse database user from database_url."""
+        parsed = urlparse(self.database_url)
+        return parsed.username or ""
+    
+    @property
+    def database_password(self) -> str:
+        """Parse database password from database_url."""
+        parsed = urlparse(self.database_url)
+        return parsed.password or "" 
     
     # JWT Configuration
     secret_key: str = "dev-secret-key-change-in-production"
@@ -70,6 +86,23 @@ class Settings(BaseSettings):
     def get_allowed_file_types(self) -> List[str]:
         """Parse allowed file types from comma-separated string."""
         return [file_type.strip() for file_type in self.allowed_file_types.split(',')]
+    
+    # Email Configuration - Mailtrap
+    smtp_server: str = "live.smtp.mailtrap.io"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""  # Mailtrap API token
+    smtp_use_tls: bool = True
+    email_from: str = "noreply@plagiarism-detector.com"
+    email_from_name: str = "Plagiarism Detection System"
+    
+    # Mailtrap API Configuration
+    mailtrap_api_token: str = ""
+    mailtrap_sender_email: str = "noreply@plagiarism-detector.com"
+    
+    # Password Reset Configuration
+    reset_token_expire_hours: int = 24
+    frontend_url: str = "http://localhost:3000"  # Frontend URL for reset links
     
     # Railway deployment configuration
     allowed_hosts: list[str] = [
