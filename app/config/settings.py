@@ -6,8 +6,7 @@ import os
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # env_file=[".env", ".env.railway"],
-        env_file=[".env"],
+        env_file=[".env", ".env.railway"],
         case_sensitive=False,
         extra="ignore"
     )
@@ -26,48 +25,11 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     
     # MinIO Configuration
-    # Environment-aware MinIO configuration
-    @property
-    def is_local_environment(self) -> bool:
-        """Check if running in local development environment."""
-        return not any([
-            os.getenv("RAILWAY_ENVIRONMENT_NAME"),
-            os.getenv("RAILWAY_PROJECT_ID"),
-            os.getenv("PORT"),
-            self.environment == "production"
-        ])
-    
-    @property
-    def minio_endpoint(self) -> str:
-        """Get MinIO endpoint based on environment."""
-        if self.is_local_environment:
-            return "localhost:9090"
-        # For Railway, return None if no MinIO endpoint is configured
-        return os.getenv("MINIO_ENDPOINT")
-    
-    @property
-    def minio_access_key(self) -> str:
-        """Get MinIO access key based on environment."""
-        if self.is_local_environment:
-            return "minioadmin"
-        return os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-    
-    @property
-    def minio_secret_key(self) -> str:
-        """Get MinIO secret key based on environment."""
-        if self.is_local_environment:
-            return "minioadmin123"
-        return os.getenv("MINIO_SECRET_KEY", "minioadmin123")
-    
-    @property
-    def minio_bucket_name(self) -> str:
-        """Get MinIO bucket name."""
-        return os.getenv("MINIO_BUCKET_NAME", "plagiarism")
-    
-    @property
-    def minio_secure(self) -> bool:
-        """Use HTTPS for MinIO in production environments."""
-        return not self.is_local_environment
+    minio_endpoint: str = "localhost:9090"
+    minio_access_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin123" 
+    minio_bucket_name: str = "plagiarism"
+    minio_secure: bool = False
     
     # Application Configuration
     app_name: str = "Plagiarism Detection System"

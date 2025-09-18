@@ -39,4 +39,3 @@ class UserDocument(Base, TimestampMixin):
     # Relationships
     user = relationship("User", back_populates="user_documents", foreign_keys=[user_id])
     approved_by_user = relationship("User", back_populates="approved_documents", foreign_keys=[approved_by])
-    plagiarism_checks = relationship("PlagiarismCheck", back_populates="user_document", cascade="all, delete-orphan")

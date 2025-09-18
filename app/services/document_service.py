@@ -13,7 +13,15 @@ logger = structlog.get_logger(__name__)
 
 
 class DocumentService:
-    """Service for document management operations."""
+    """
+    Service for reference document submission management operations.
+    
+    This service handles:
+    - UserDocument: Reference document submissions that need admin approval
+    - ReferenceDocument: Approved reference documents used for plagiarism comparison
+    
+    For plagiarism check documents, use CheckDocumentService instead.
+    """
     
     def __init__(self, db: Session):
         self.db = db
@@ -28,7 +36,7 @@ class DocumentService:
         file_size: int,
         title: Optional[str] = None
     ) -> UserDocument:
-        """Upload a user document."""
+        """Upload a reference document submission (requires admin approval)."""
         try:
             # Upload file to storage first
             object_id = self.storage_service.upload_file(
@@ -201,7 +209,7 @@ class DocumentService:
     ) -> ReferenceDocument:
         """Create a reference document directly."""
         try:
-            # Upload file to storage
+            # Upload file to storage FIRST - fail fast if storage is unavailable
             object_id = self.storage_service.upload_file(
                 file_data=file_data,
                 original_filename=filename,
@@ -209,7 +217,7 @@ class DocumentService:
                 file_size=file_size
             )
             
-            # Create database record
+            # Only create database record if file upload succeeded
             document = ReferenceDocument(
                 title=title,
                 object_id=object_id,
@@ -232,6 +240,8 @@ class DocumentService:
             return document
             
         except Exception as e:
+            # Rollback database transaction if anything fails
+            self.db.rollback()
             logger.error("Failed to create reference document", error=str(e))
             raise
     

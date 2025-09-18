@@ -1,23 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
-import io
 
 from app.config.database import get_db
 from app.core.dependencies import get_current_admin_dependency, get_pagination_params, PaginationParams
 from app.services.admin_service import AdminService
-from app.services.document_service import DocumentService
 from app.services.user_service import UserService
 from app.models.user import User
-from app.schemas.document import (
-    UserDocumentResponse, 
-    ReferenceDocumentResponse, 
-    DocumentApprovalRequest, 
-    DocumentRejectionRequest
-)
 from app.schemas.user import UserResponse, UserUpdate
 from app.schemas.common import BaseResponse, PaginatedResponse
-from app.utils.validators import validate_file_upload
 from app.utils.helpers import create_response_metadata
 
 router = APIRouter()
@@ -144,165 +135,5 @@ async def unban_user(
             message="User unbanned successfully",
             data=UserResponse.from_orm(unbanned_user)
         )
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.get("/documents/pending", response_model=PaginatedResponse)
-async def get_pending_documents(
-    pagination: PaginationParams = Depends(get_pagination_params),
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Get pending document approvals."""
-    document_service = DocumentService(db)
-    
-    documents = document_service.get_pending_documents(
-        skip=pagination.offset,
-        limit=pagination.size
-    )
-    total_count = document_service.get_pending_documents_count()
-    
-    document_responses = [UserDocumentResponse.from_orm(doc) for doc in documents]
-    metadata = create_response_metadata(pagination.page, pagination.size, total_count, len(documents))
-    
-    return PaginatedResponse(
-        data=document_responses,
-        pagination=metadata["pagination"]
-    )
-
-
-@router.get("/documents/pending/summary", response_model=BaseResponse)
-async def get_pending_documents_summary(
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Get summary of pending documents."""
-    admin_service = AdminService(db)
-    summary = admin_service.get_pending_document_summary()
-    
-    return BaseResponse(
-        message="Pending documents summary retrieved successfully",
-        data=summary
-    )
-
-
-@router.post("/documents/{document_id}/approve", response_model=BaseResponse)
-async def approve_document(
-    document_id: int,
-    approval_data: DocumentApprovalRequest,
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Approve a user document for inclusion in reference database."""
-    document_service = DocumentService(db)
-    
-    try:
-        approved_doc = document_service.approve_user_document(
-            document_id=document_id,
-            admin_id=current_admin.id,
-            comment=approval_data.comment
-        )
-        return BaseResponse(
-            message="Document approved successfully",
-            data=UserDocumentResponse.from_orm(approved_doc)
-        )
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.post("/documents/{document_id}/reject", response_model=BaseResponse)
-async def reject_document(
-    document_id: int,
-    rejection_data: DocumentRejectionRequest,
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Reject a user document."""
-    document_service = DocumentService(db)
-    
-    try:
-        rejected_doc = document_service.reject_user_document(
-            document_id=document_id,
-            admin_id=current_admin.id,
-            comment=rejection_data.comment
-        )
-        return BaseResponse(
-            message="Document rejected successfully",
-            data=UserDocumentResponse.from_orm(rejected_doc)
-        )
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.post("/reference-documents", response_model=BaseResponse, status_code=status.HTTP_201_CREATED)
-async def create_reference_document(
-    file: UploadFile = File(...),
-    title: str = Form(...),
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Create a reference document directly."""
-    validate_file_upload(file)
-    
-    document_service = DocumentService(db)
-    
-    try:
-        file_content = await file.read()
-        file_stream = io.BytesIO(file_content)
-        
-        document = document_service.create_reference_document(
-            admin_id=current_admin.id,
-            file_data=file_stream,
-            filename=file.filename,
-            content_type=file.content_type,
-            file_size=len(file_content),
-            title=title
-        )
-        
-        return BaseResponse(
-            message="Reference document created successfully",
-            data=ReferenceDocumentResponse.from_orm(document)
-        )
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.get("/reference-documents", response_model=PaginatedResponse)
-async def get_reference_documents(
-    pagination: PaginationParams = Depends(get_pagination_params),
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Get reference documents."""
-    document_service = DocumentService(db)
-    
-    documents = document_service.get_reference_documents(
-        skip=pagination.offset,
-        limit=pagination.size
-    )
-    total_count = document_service.get_reference_documents_count()
-    
-    document_responses = [ReferenceDocumentResponse.from_orm(doc) for doc in documents]
-    metadata = create_response_metadata(pagination.page, pagination.size, total_count, len(documents))
-    
-    return PaginatedResponse(
-        data=document_responses,
-        pagination=metadata["pagination"]
-    )
-
-
-@router.delete("/reference-documents/{document_id}", response_model=BaseResponse)
-async def delete_reference_document(
-    document_id: int,
-    current_admin: User = Depends(get_current_admin_dependency),
-    db: Session = Depends(get_db)
-):
-    """Delete a reference document."""
-    document_service = DocumentService(db)
-    
-    try:
-        document_service.delete_reference_document(document_id)
-        return BaseResponse(message="Reference document deleted successfully")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

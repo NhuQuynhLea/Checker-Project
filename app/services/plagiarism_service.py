@@ -4,7 +4,8 @@ import structlog
 import time
 
 from app.models.plagiarism import PlagiarismCheck, PlagiarismMatch, SentenceMatch
-from app.models.document import UserDocument, ReferenceDocument
+from app.models.check_document import CheckDocument
+from app.models.document import ReferenceDocument
 from app.services.storage_service import StorageService
 from app.core.exceptions import NotFoundException, PlagiarismCheckException
 from app.utils.helpers import calculate_similarity_percentage
@@ -20,11 +21,11 @@ class PlagiarismService:
         self.storage_service = StorageService()
     
     def start_plagiarism_check(self, user_id: int, document_id: int) -> PlagiarismCheck:
-        """Start plagiarism check for a user document."""
+        """Start plagiarism check for a check document."""
         # Verify document exists and belongs to user
-        document = self.db.query(UserDocument).filter(
-            UserDocument.id == document_id,
-            UserDocument.user_id == user_id
+        document = self.db.query(CheckDocument).filter(
+            CheckDocument.id == document_id,
+            CheckDocument.user_id == user_id
         ).first()
         
         if not document:
@@ -33,7 +34,7 @@ class PlagiarismService:
         # Create plagiarism check record
         check = PlagiarismCheck(
             user_id=user_id,
-            user_document_id=document_id,
+            check_document_id=document_id,
             total_similarity_score=0.0,
             check_status="processing"
         )
@@ -58,15 +59,15 @@ class PlagiarismService:
     def create_plagiarism_check(
         self, 
         user_id: int, 
-        document_id: int, 
+        check_document_id: int, 
         check_status: str = "processing"
     ) -> PlagiarismCheck:
         """Create a new plagiarism check record."""
         try:
             # Verify document exists and belongs to user
-            document = self.db.query(UserDocument).filter(
-                UserDocument.id == document_id,
-                UserDocument.user_id == user_id
+            document = self.db.query(CheckDocument).filter(
+                CheckDocument.id == check_document_id,
+                CheckDocument.user_id == user_id
             ).first()
             
             if not document:
@@ -75,7 +76,7 @@ class PlagiarismService:
             # Create plagiarism check record
             check = PlagiarismCheck(
                 user_id=user_id,
-                user_document_id=document_id,
+                check_document_id=check_document_id,
                 total_similarity_score=0.0,
                 check_status=check_status,
                 reference_documents_count=0,
@@ -89,7 +90,7 @@ class PlagiarismService:
             logger.info(
                 "Plagiarism check created",
                 check_id=check.id,
-                document_id=document_id,
+                check_document_id=check_document_id,
                 status=check_status
             )
             
@@ -232,10 +233,10 @@ class PlagiarismService:
         
         return ref_doc is not None
     
-    def get_document_plagiarism_checks(self, document_id: int) -> list:
-        """Get all plagiarism checks for a document."""
+    def get_document_plagiarism_checks(self, check_document_id: int) -> list:
+        """Get all plagiarism checks for a check document."""
         return self.db.query(PlagiarismCheck).filter(
-            PlagiarismCheck.user_document_id == document_id
+            PlagiarismCheck.check_document_id == check_document_id
         ).order_by(PlagiarismCheck.created_at.desc()).all()
     
     def _process_plagiarism_check(self, check: PlagiarismCheck) -> None:
@@ -244,8 +245,8 @@ class PlagiarismService:
         
         try:
             # Get user document content
-            user_doc = check.user_document
-            user_content = self.storage_service.download_file(user_doc.object_id)
+            check_doc = check.check_document
+            user_content = self.storage_service.download_file(check_doc.object_id)
             user_text = user_content.decode('utf-8', errors='ignore')
             
             # Get all reference documents
@@ -452,8 +453,8 @@ class PlagiarismService:
                 'created_at': check.created_at
             },
             'document': {
-                'id': check.user_document.id,
-                'title': check.user_document.title
+                'id': check.check_document.id,
+                'title': check.check_document.title
             },
             'matches': detailed_matches
         }

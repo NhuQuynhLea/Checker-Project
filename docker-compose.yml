@@ -24,6 +24,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # pgAdmin4 Web Interface
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: plagiarism_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@checker-project.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "8080:80"
+    networks:
+      - plagiarism_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   # MinIO Object Storage
   minio:
     image: minio/minio:latest
@@ -48,6 +66,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  pgadmin_data:
 
 networks:
   plagiarism_network:

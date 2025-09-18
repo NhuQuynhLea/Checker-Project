@@ -7,7 +7,7 @@ import structlog
 from app.config.database import get_db
 from app.core.dependencies import get_current_user_dependency
 from app.models.user import User
-from app.services.document_service import DocumentService
+from app.services.check_document_service import CheckDocumentService
 from app.services.plagiarism_service import PlagiarismService
 from app.schemas.common import BaseResponse
 from app.schemas.plagiarism import PlagiarismCheckResponse, ExternalApiResult
@@ -40,8 +40,8 @@ async def upload_and_check_plagiarism(
         file.file.seek(0)  # Reset file pointer for document service
         
         # Step 1: Upload and save document to MinIO
-        document_service = DocumentService(db)
-        document = document_service.upload_user_document(
+        check_document_service = CheckDocumentService(db)
+        document = check_document_service.upload_check_document(
             user_id=current_user.id,
             file_data=file.file,
             filename=file.filename,
@@ -54,7 +54,7 @@ async def upload_and_check_plagiarism(
         plagiarism_service = PlagiarismService(db)
         plagiarism_check = plagiarism_service.create_plagiarism_check(
             user_id=current_user.id,
-            document_id=document.id,
+            check_document_id=document.id,
             check_status="processing"
         )
         
@@ -157,11 +157,11 @@ async def get_user_history(
     Get user's document upload and plagiarism check history.
     """
     try:
-        document_service = DocumentService(db)
+        check_document_service = CheckDocumentService(db)
         plagiarism_service = PlagiarismService(db)
         
         # Get user documents with their plagiarism checks
-        documents = document_service.get_user_documents(
+        documents = check_document_service.get_check_documents_with_plagiarism_history(
             user_id=current_user.id,
             skip=skip,
             limit=limit
@@ -190,7 +190,7 @@ async def get_user_history(
             history.append(doc_data)
         
         # Get total count for pagination
-        total_count = document_service.get_user_documents_count(current_user.id)
+        total_count = check_document_service.get_user_check_documents_count(current_user.id)
         
         return BaseResponse(
             success=True,

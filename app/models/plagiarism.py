@@ -11,7 +11,7 @@ class PlagiarismCheck(Base, TimestampMixin):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user_document_id = Column(Integer, ForeignKey("user_documents.id"), nullable=False)
+    check_document_id = Column(Integer, ForeignKey("check_documents.id"), nullable=False)
     total_similarity_score = Column(Float, nullable=False)
     check_status = Column(String(20), default="completed", nullable=False)  # 'processing' | 'completed' | 'failed'
     processing_time = Column(Integer)  # Time in milliseconds
@@ -21,7 +21,7 @@ class PlagiarismCheck(Base, TimestampMixin):
     
     # Relationships
     user = relationship("User", back_populates="plagiarism_checks")
-    user_document = relationship("UserDocument", back_populates="plagiarism_checks")
+    check_document = relationship("CheckDocument", back_populates="plagiarism_checks")
     plagiarism_matches = relationship("PlagiarismMatch", back_populates="check", cascade="all, delete-orphan")
     
     __table_args__ = (

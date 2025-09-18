@@ -48,91 +48,16 @@ class StorageService:
                 self.is_connected = False
             self._initialized = True
 
-    def _should_skip_minio(self) -> bool:
-        """Determine if MinIO initialization should be skipped."""
-        # Check if we're in local environment first
-        is_local = getattr(settings, 'is_local_environment', False)
-        
-        # Don't skip if we're in local environment and have localhost endpoint
-        if is_local and settings.minio_endpoint in ["localhost:9000", "localhost:9090"]:
-            logger.info("Local environment with localhost MinIO - will attempt connection")
-            return False
-            
-        # Don't skip if we have proper MinIO configuration (Railway or external)
-        if settings.minio_endpoint and settings.minio_access_key and settings.minio_secret_key:
-            logger.info("MinIO configuration available - will attempt connection")
-            return False
-            
-        # Skip if no MinIO endpoint configured
-        if not settings.minio_endpoint:
-            logger.info("Skipping MinIO initialization - no MinIO endpoint configured")
-            return True
-                
-        return False
-    
     def _initialize_client(self):
         """Initialize MinIO client with connection validation."""
-        # Log current MinIO configuration for debugging
-        # logger.info(
-        #     "MinIO configuration",
-        #     endpoint=settings.minio_endpoint,
-        #     access_key=settings.minio_access_key,
-        #     bucket=settings.minio_bucket_name,
-        #     secure=settings.minio_secure,
-        #     is_local=getattr(settings, 'is_local_environment', 'unknown')
-        # )
-        
-        # # Skip MinIO initialization if we detect it will fail
-        # if self._should_skip_minio():
-        #     self.is_connected = False
-        #     self.client = None
-        #     return
-            
-        # # Don't create client if we can't reach the endpoint
-        # import socket
-        # try:
-        #     host, port = settings.minio_endpoint.split(':')
-        #     port = int(port)
-        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     sock.settimeout(2)  # 2 second timeout
-        #     result = sock.connect_ex((host, port))
-        #     sock.close()
-            
-        #     if result != 0:
-        #         logger.warning(
-        #             "MinIO endpoint not reachable, skipping client creation",
-        #             endpoint=settings.minio_endpoint
-        #         )
-        #         self.is_connected = False
-        #         self.client = None
-        #         return
-                
-        # except Exception as e:
-        #     logger.warning(
-        #         "Failed to test MinIO endpoint connectivity",
-        #         endpoint=settings.minio_endpoint,
-        #         error=str(e)
-        #     )
-        #     self.is_connected = False
-        #     self.client = None
-        #     return
-            
-        # Only create client if endpoint is reachable
-        client = None
         try:
+            # Use settings-based configuration for proper environment detection
             client = Minio(
-                # settings.minio_endpoint,
-                "bucket-production-deb2d.up.railway.app",
+                settings.minio_endpoint,
                 access_key=settings.minio_access_key,
                 secret_key=settings.minio_secret_key,
                 secure=settings.minio_secure
             )
-            # client = Minio(
-            #     "bucket-production-deb2d.up.railway.app",
-            #     access_key="bkb7kf2lVvqb5BWBn9yF",
-            #     secret_key="6vph8QeeUwDHIKSKeAYJeTErYI51XgWK6QJdbror",
-            #     secure=True
-            # )
             
             # Test connection by listing buckets
             list(client.list_buckets())
@@ -151,13 +76,12 @@ class StorageService:
             
         except Exception as e:
             logger.error(
-                "Failed to initialize MinIO client after connectivity test",
+                "Failed to initialize MinIO client",
                 endpoint=settings.minio_endpoint,
                 error=str(e)
             )
             self.is_connected = False
             self.client = None
-            client = None
     
     def _ensure_bucket_exists(self):
         """Ensure the bucket exists, create if it doesn't."""

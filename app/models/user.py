@@ -21,8 +21,14 @@ class User(Base, TimestampMixin):
     
     # Relationships
     user_documents = relationship("UserDocument", back_populates="user", foreign_keys="UserDocument.user_id", cascade="all, delete-orphan")
+    check_documents = relationship("CheckDocument", back_populates="user", cascade="all, delete-orphan")
     plagiarism_checks = relationship("PlagiarismCheck", back_populates="user")
     user_plans = relationship("UserPlan", back_populates="user", cascade="all, delete-orphan")
     created_reference_documents = relationship("ReferenceDocument", back_populates="created_by_user")
     approved_documents = relationship("UserDocument", foreign_keys="UserDocument.approved_by", back_populates="approved_by_user")
+    
+    @property
+    def is_admin(self) -> bool:
+        """Check if user has admin role."""
+        return self.role == "admin"
     
